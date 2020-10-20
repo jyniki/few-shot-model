@@ -1,0 +1,4 @@
+dataset_path: few_data/
+dataset: miniimagenet
+dataset_args: {split: test}
+load: meta_miniimagenet-1shot_meta-baseline-resnet12
