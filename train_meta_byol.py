@@ -85,19 +85,6 @@ def main(config):
         writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
         np.random.seed(epoch)
 
-        '''
-        for data, _ in tqdm(train_dataloader, desc='train', leave=False):
-            data[0] = data[0].cuda()
-            data[1] = data[1].cuda()
-
-            loss = model(data[0], data[1]).mean()
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            aves['tl'].add(loss.item())
-        
-        '''
         for data, _ in tqdm(train_dataloader, desc='train', leave=False):
             data[0] = data[0].cuda()
             data[1] = data[1].cuda()
@@ -113,7 +100,6 @@ def main(config):
             optimizer.step()
             model.module.update_moving_average()
             aves['tl'].add(loss.item())
-       
 
         _sig = int(_[-1])
 
