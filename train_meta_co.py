@@ -41,28 +41,6 @@ def main(config):
     if config.get('visualize_datasets'):
         utils.visualize_dataset(train_dataset, 'train_dataset', writer)
 
-    '''
-    # val
-    if config.get('val_dataset'):
-        val_dataset = get_fewshot_dataset(config['dataset_path'], config['val_dataset'], **config['val_dataset_args'])
-        val_dataloader = get_meta_loader(val_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query, batch_size=config['val_dataset_args']['batch_size'], num_workers=4)
-        utils.log('val dataset: {}'.format(config['val_dataset']))
-        if config.get('visualize_datasets'):
-            utils.visualize_dataset(val_dataset, 'val_dataset', writer)
-    else:
-        val_dataloader = None
-
-    # test
-    if config.get('test_dataset'):
-        test_dataset = get_fewshot_dataset(config['dataset_path'], config['test_dataset'], **config['test_dataset_args'])
-        test_dataloader = get_meta_loader(test_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query, batch_size=config['test_dataset_args']['batch_size'], num_workers=4)
-        utils.log('test dataset: {}'.format(config['test_dataset']))
-        if config.get('visualize_datasets'):
-            utils.visualize_dataset(test_dataset, 'test_dataset', writer)
-    else:
-        test_dataloader = None
-    '''
-
     #### Model and optimizer ####
     if config.get('load'):
         model_sv = torch.load(config['load'])
@@ -121,30 +99,6 @@ def main(config):
             output = None
             loss = None 
 
-        '''
-        # eval  
-        model.eval()
-        for name, loader, name_l, name_a in [
-                ('val', val_dataloader, 'vl', 'va'),
-                ('test', test_dataloader, 'tvl', 'tva')]:
-
-            if ((config.get('val_dataset') is None) and name == 'val') \
-                    or ((config.get('test_dataset') is None) and name == 'test'):
-                continue
-
-            np.random.seed(0)
-            for data, _ in tqdm(loader, desc=name, leave=False):
-                # x_query: [4, 75, 3, 84, 84]
-                # x_shot: [4, 5, 1, 3, 84, 84]
-                x_shot, x_query = split_shot_query(data.cuda(), n_way, n_shot, n_query, ep_per_batch=config[name + '_dataset_args']['batch_size'])
-                label = make_nk_label(n_way, n_query, ep_per_batch=config[name + '_dataset_args']['batch_size']).cuda()  
-                with torch.no_grad():
-                    logits = model(x_shot, x_query).view(-1, n_way)
-                    loss = F.cross_entropy(logits, label)
-                    acc = utils.compute_acc(logits, label)
-                aves[name_l].add(loss.item())
-                aves[name_a].add(acc)
-        '''
 
         _sig = int(_[-1])
 
@@ -159,22 +113,6 @@ def main(config):
         t_epoch = utils.time_str(timer_epoch.t())
         t_used = utils.time_str(timer_used.t())
         t_estimate = utils.time_str(timer_used.t() / epoch * max_epoch)
-        # utils.log('epoch {}, train {:.4f}|{:.4f}, val {:.4f}|{:.4f}, '
-        #         'tval {:.4f}|{:.4f}, {} {}/{} (@{})'.format(
-        #         epoch, aves['tl'], aves['ta'], aves['vl'], aves['va'],
-        #         aves['tvl'], aves['tva'], t_epoch, t_used, t_estimate, _sig))
-
-        # writer.add_scalars('loss', {
-        #     'train': aves['tl'],
-        #     'val': aves['vl'],
-        #     'test': aves['tvl'],
-        # }, epoch)
-        # writer.add_scalars('acc', {
-        #     'train': aves['ta'],
-        #     'val': aves['va'],
-        #     'test': aves['tva'],
-        # }, epoch)
-
         utils.log('epoch {}, train {:.4f}|{:.4f}, {} {}/{} (@{})'.format(epoch, aves['tl'], aves['ta'], t_epoch, t_used, t_estimate, _sig))
 
         writer.add_scalars('loss', {'train': aves['tl'],}, epoch)
