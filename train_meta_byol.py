@@ -62,8 +62,6 @@ def main(config):
     #### train and test ####
     max_epoch = config['max_epoch']
     save_epoch = config.get('save_epoch')
-    if save_epoch is None:
-        save_epoch = 5
     max_va = 0.
     timer_used = utils.Timer()
     timer_epoch = utils.Timer()
