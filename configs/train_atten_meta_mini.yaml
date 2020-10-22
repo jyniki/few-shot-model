@@ -1,0 +1,25 @@
+dataset_path: few_data/
+train_dataset: miniimagenet
+train_dataset_args: {split: train , batch_size: 4}
+val_dataset: miniimagenet
+val_dataset_args: {split: test, batch_size: 4}
+test_dataset: miniimagenet
+test_dataset_args: {split: val, batch_size: 4}
+
+model: meta-baseline
+model_args: 
+    encoder: resnet12 # resnet18
+    encoder_args: {}
+
+load_encoder: ./save/classifier_miniimagenet_resnet12/epoch-last.pth
+
+n_way: 5
+n_shot: 1 #5
+n_query: 15
+train_batches: 200
+
+max_epoch: 20
+optimizer: sgd
+optimizer_args: {lr: 0.001, weight_decay: 5.e-4}
+
+visualize_datasets: True
