@@ -22,8 +22,6 @@ class EMA():
 def update_moving_average(ema_updater, ma_model, current_model):
     for i, (current_params, ma_params) in enumerate(zip(current_model.parameters(), ma_model.parameters())):
         old_weight, up_weight = ma_params.data, current_params.data
-        # if (i <= 2):
-        #     print(up_weight)
         ma_params.data = ema_updater.update_average(old_weight, up_weight)
 
 def singleton(cache_key):
@@ -87,30 +85,9 @@ class MetaByol(nn.Module):
         assert self.target_encoder_all is not None, 'target encoder has not been created yet'
         update_moving_average(self.target_ema_updater, self.target_encoder_all, self.online_encoder_all)
 
-
-    '''
-    def forward(self, image_one, image_two):
-    
-        online_proj_one = self.online_encoder_all(image_one)
-        online_proj_two = self.online_encoder_all(image_two)
-    
-        online_pred_one = self.online_predictor(online_proj_one)
-        online_pred_two = self.online_predictor(online_proj_two)
-    
-        with torch.no_grad():
-            target_encoder_all = self._get_target_encoder()
-            target_proj_one = target_encoder_all(image_one)
-            target_proj_two = target_encoder_all(image_two)
-    
-        loss_one = loss_fn(online_pred_one, target_proj_two.detach())
-        loss_two = loss_fn(online_pred_two, target_proj_one.detach())
-    
-        loss = loss_one + loss_two
-    
-        return loss.mean()
-    '''
     
     def forward(self, x_shot_one, x_query_one, x_shot_two, x_query_two):
+        
         shot_shape = x_shot_one.shape[:-3]
         query_shape = x_query_one.shape[:-3]
         img_shape = x_shot_one.shape[-3:]
@@ -118,12 +95,16 @@ class MetaByol(nn.Module):
         x_query_one = x_query_one.view(-1, *img_shape)
         x_shot_two = x_shot_one.view(-1, *img_shape)
         x_query_two = x_query_two.view(-1, *img_shape)
+       
         image_one = torch.cat([x_shot_one, x_query_one], dim=0)
         image_two = torch.cat([x_shot_two, x_query_two], dim=0)
+        
         online_feat_one = self.online_encoder(image_one)
         online_feat_two = self.online_encoder(image_two)
+        
         online_proj_one = self.online_projector(online_feat_one)
         online_proj_two = self.online_projector(online_feat_two)
+        
         online_pred_one = self.online_predictor(online_proj_one)
         online_pred_two = self.online_predictor(online_proj_two)
 
@@ -134,6 +115,7 @@ class MetaByol(nn.Module):
 
         loss_one = loss_fn(online_pred_one, target_proj_two.detach())
         loss_two = loss_fn(online_pred_two, target_proj_one.detach())
+        
         loss_byol = loss_one + loss_two
 
         x_shot_one, x_query_one = online_feat_one[:len(x_shot_one)], online_feat_one[-len(x_query_one):]
