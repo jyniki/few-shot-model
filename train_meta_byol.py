@@ -115,10 +115,10 @@ def main(config):
         t_used = utils.time_str(timer_used.t())
         t_estimate = utils.time_str(timer_used.t() / epoch * max_epoch)
        
-        utils.log('epoch {}, train {:.4f}|{:.4f}, {} {}/{} (@{})'.format(epoch, aves['tl'], aves['ta'], t_epoch, t_used, t_estimate, _sig))
+        utils.log('epoch {}, train| loss: {:.4f}, {} {}/{} (@{})'.format(epoch, aves['tl'], t_epoch, t_used, t_estimate, _sig))
 
         writer.add_scalars('loss', {'train': aves['tl'],}, epoch)
-        writer.add_scalars('acc', {'train': aves['ta'],}, epoch)
+        # writer.add_scalars('acc', {'train': aves['ta'],}, epoch)
 
         if config.get('_parallel'):
             model_ = model.module
