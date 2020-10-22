@@ -22,8 +22,6 @@ class EMA():
 def update_moving_average(ema_updater, ma_model, current_model):
     for i, (current_params, ma_params) in enumerate(zip(current_model.parameters(), ma_model.parameters())):
         old_weight, up_weight = ma_params.data, current_params.data
-        # if (i <= 2):
-        #     print(up_weight)
         ma_params.data = ema_updater.update_average(old_weight, up_weight)
 
 def singleton(cache_key):
