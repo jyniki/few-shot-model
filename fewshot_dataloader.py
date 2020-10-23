@@ -154,7 +154,7 @@ def get_fewshot_dataset(datapath, dataset, split='train', **kwargs):
 
         transform = TwoCropsTransform(transforms.Compose(augmentation))
 
-    elif augment == 'aug_byol1':
+    elif augment == 'aug_byol2':
         augmentation = [
             transforms.RandomApply([
                 transforms.ColorJitter(0.8, 0.8, 0.8, 0.2)   
@@ -165,13 +165,16 @@ def get_fewshot_dataset(datapath, dataset, split='train', **kwargs):
             transforms.ToTensor(),
             normalize
         ]
+        base_augmentation = transforms.Compose([transforms.Resize(image_size), transforms.ToTensor()])
+
+        transform = TwoTransformAndOri(base_augmentation, transforms.Compose(augmentation))
 
     else:
         if dataset == 'cub':
             transform = transforms.Compose([transforms.Resize(image_size), 
                                             transforms.CenterCrop(image_size),
                                             transforms.ToTensor(), 
-                                            normalize,])
+                                            normalize])
 
         else:
             transform = transforms.Compose([transforms.Resize(image_size), transforms.ToTensor(), normalize,])

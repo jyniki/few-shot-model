@@ -37,7 +37,7 @@ def main(config):
     # train
     train_dataset = get_fewshot_dataset(config['dataset_path'], config['train_dataset'],
                                         **config['train_dataset_args'])
-    train_dataloader = get_meta_loader(train_dataset, ways=n_way, shots=n_shot, query_shots=n_query
+    train_dataloader = get_meta_loader(train_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query
                                        , batch_size=config['train_dataset_args']['batch_size'],num_workers=4)
     utils.log('train dataset: {}'.format(config['train_dataset']))
     if config.get('visualize_datasets'):
@@ -47,7 +47,7 @@ def main(config):
     if config.get('val_dataset'):
         val_dataset = get_fewshot_dataset(config['dataset_path'], config['val_dataset'],
                                             **config['val_dataset_args'])
-        val_dataloader = get_meta_loader(val_dataset, ways=n_way, shots=n_shot, query_shots=n_query
+        val_dataloader = get_meta_loader(val_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query
                                            , batch_size=config['val_dataset_args']['batch_size'], num_workers=4)
         utils.log('val dataset: {}'.format(config['val_dataset']))
         if config.get('visualize_datasets'):
@@ -59,7 +59,7 @@ def main(config):
     if config.get('test_dataset'):
         test_dataset = get_fewshot_dataset(config['dataset_path'], config['test_dataset'],
                                           **config['test_dataset_args'])
-        test_dataloader = get_meta_loader(test_dataset, ways=n_way, shots=n_shot, query_shots=n_query
+        test_dataloader = get_meta_loader(test_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query
                                          , batch_size=config['test_dataset_args']['batch_size'], num_workers=4)
         utils.log('test dataset: {}'.format(config['test_dataset']))
         if config.get('visualize_datasets'):
@@ -238,7 +238,7 @@ if __name__ == '__main__':
     parser.add_argument('--config',default='configs/train_meta_byol2_mini.yaml')
     parser.add_argument('--name', default=None)
     parser.add_argument('--tag', default=None)
-    parser.add_argument('--gpu', default='0')
+    parser.add_argument('--gpu', default='0,1,2,3')
     args = parser.parse_args()
 
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
