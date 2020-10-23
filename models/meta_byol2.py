@@ -98,12 +98,10 @@ class MetaByol5(nn.Module):
 
     def forward(self, x_shot_ori, x_query_ori, x_shot_one, x_query_one, x_shot_two, x_query_two):
 
-        shot_shape = x_shot_one.shape[:-3]
-        query_shape = x_query_one.shape[:-3]
         img_shape = x_shot_one.shape[-3:]
         x_shot_one = x_shot_one.view(-1, *img_shape)
         x_query_one = x_query_one.view(-1, *img_shape)
-        x_shot_two = x_shot_one.view(-1, *img_shape)
+        x_shot_two = x_shot_two.view(-1, *img_shape)
         x_query_two = x_query_two.view(-1, *img_shape)
 
         image_one = torch.cat([x_shot_one, x_query_one], dim=0)
@@ -138,17 +136,6 @@ class MetaByol5(nn.Module):
         x_shot, x_query = x_tot[:len(x_shot)], x_tot[-len(x_query):]
         x_shot = x_shot.view(*shot_shape, -1)
         x_query = x_query.view(*query_shape, -1)
-
-        # x_shot_one, x_query_one = online_feat_one[:len(x_shot_one)], online_feat_one[-len(x_query_one):]
-        # x_shot_one = x_shot_one.view(*shot_shape, -1)
-        # x_query_one = x_query_one.view(*query_shape, -1)
-        #
-        # x_shot_two, x_query_two = online_feat_two[:len(x_shot_two)], online_feat_two[-len(x_query_two):]
-        # x_shot_two = x_shot_two.view(*shot_shape, -1)
-        # x_query_two = x_query_two.view(*query_shape, -1)
-        #
-        # x_shot = torch.cat([x_shot_one, x_shot_two], dim=2)
-        # x_query = torch.cat([x_query_one, x_query_two], dim=1)
 
         if self.method == 'cos':
             x_shot = x_shot.mean(dim=-2)

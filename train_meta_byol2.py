@@ -235,7 +235,7 @@ def main(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config',default='configs/train_meta_byol_mini.yaml')
+    parser.add_argument('--config',default='configs/train_meta_byol2_mini.yaml')
     parser.add_argument('--name', default=None)
     parser.add_argument('--tag', default=None)
     parser.add_argument('--gpu', default='0')
