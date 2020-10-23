@@ -1,10 +1,7 @@
 dataset_path: few_data/
 train_dataset: miniimagenet
 train_dataset_args: {split: train, augment: aug_co, batch_size: 4}  
-# val_dataset: miniimagenet
-# val_dataset_args: {split: val, batch_size: 4}
-# test_dataset: miniimagenet
-# test_dataset_args: {split: test, batch_size: 4}
+
 
 model: meta-co
 model_args: 
