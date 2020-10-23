@@ -92,12 +92,15 @@ def main(config):
                 epoch, aves['tva'].item() * 100,
                 mean_confidence_interval(va_lst) * 100,
                 aves['tvl'].item(), _[-1]))
-
+        utils.log('test epoch {}: acc={:.2f} +- {:.2f} (%), loss={:.4f} (@{})'.format(
+                  epoch, aves['tva'].item() * 100,
+                  mean_confidence_interval(va_lst) * 100,
+                  aves['tvl'].item(), _[-1]))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='./configs/test_few_shot.yaml')
-    parser.add_argument('--shot', type=int, default=5)
+    parser.add_argument('--shot', type=int, default=1)
     parser.add_argument('--test-epochs', type=int, default=10)
     parser.add_argument('--sauc', action='store_true')
     parser.add_argument('--gpu', default='0,1,2,3')

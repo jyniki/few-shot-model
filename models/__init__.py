@@ -10,5 +10,5 @@ from . import backbone
 # linear-classifier/nn-classifier(cos,dot,sqr)
 from . import classifier
 
-from . import meta_baseline, meta_byol, meta_co
+from . import meta_baseline, meta_byol, meta_co, meta_atten
 
