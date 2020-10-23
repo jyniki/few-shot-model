@@ -157,7 +157,7 @@ def get_fewshot_dataset(datapath, dataset, split='train', **kwargs):
             ], p=0.8),
             transforms.RandomGrayscale(p=0.2),
             transforms.RandomApply([GaussianBlur([1.5, 1.5])], p=0.1),
-            transforms.RandomResizedCrop(size=img_size),
+            transforms.RandomResizedCrop(size=image_size),
             transforms.ToTensor(),
             normalize
         ]
