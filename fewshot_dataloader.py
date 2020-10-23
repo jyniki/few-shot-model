@@ -75,6 +75,17 @@ class TwoCropsTransform:
         return [q, k]
 
 
+class TwoTransformAndOri:
+    def __init__(self, base_transform, transform):
+        self.base_transform = base_transform
+        self.transform = transform
+
+    def __call__(self, x):
+        o = self.base_transform(x)
+        q = self.transform(x)
+        k = self.transform(x)
+        return [o, q, k]
+
 class GaussianBlur(object):
     """Gaussian blur augmentation in SimCLR https://arxiv.org/abs/2002.05709"""
     def __init__(self, sigma=[.1, 2.]):
@@ -85,29 +96,24 @@ class GaussianBlur(object):
         x = x.filter(ImageFilter.GaussianBlur(radius=sigma))
         return x
 
+class RandomApply(nn.Module):
+    def __init__(self, fn, p):
+        super().__init__()
+        self.fn = fn
+        self.p = p
+    def forward(self, x):
+        if random.random() > self.p:
+            return x
+        return self.fn(x)
+        
 def get_fewshot_dataset(datapath, dataset, split='train', **kwargs):
     # image resize and augmentation
     image_size = 28 if dataset == 'omniglot' else 84
     
     # Get transform
-    norm_params = {'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}
-    normalize = transforms.Normalize(**norm_params)
     augment = kwargs.get('augment')
-
-    if augment == 'crop':
-        transform = transforms.Compose([transforms.Resize(image_size),
-                                        transforms.RandomCrop(image_size, padding=8),
-                                        transforms.RandomHorizontalFlip(),
-                                        transforms.ToTensor(),
-                                        normalize,])
-
-    elif augment == 'resize':
-        transform = transforms.Compose([transforms.Resize(image_size),
-                                        transforms.RandomHorizontalFlip(),
-                                        transforms.ToTensor(),
-                                        normalize,])
-
-    elif augment == 'aug':
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    if augment == 'aug':
         color_jitter = transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1) # 调整亮度、对比度、饱和度和色相
         transform = transforms.Compose([transforms.Resize(image_size),
                                         transforms.RandomResizedCrop(size=image_size, scale=(0.5, 1.0)),
@@ -119,7 +125,6 @@ def get_fewshot_dataset(datapath, dataset, split='train', **kwargs):
                                         normalize,])
     
     elif augment == 'aug_co':
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         augmentation = [
             transforms.RandomResizedCrop(size=image_size, scale=(0.2, 1.)),
             transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
@@ -131,6 +136,32 @@ def get_fewshot_dataset(datapath, dataset, split='train', **kwargs):
         ]
         transform = TwoCropsTransform(transforms.Compose(augmentation))
     
+    elif augment == 'aug_byol':
+        augmentation = [
+            transforms.RandomApply([
+                transforms.ColorJitter(0.8, 0.8, 0.8, 0.2)   
+            ], p=0.8),
+            transforms.RandomGrayscale(p=0.2),
+            transforms.RandomApply([GaussianBlur([1.5, 1.5])], p=0.1),
+            transforms.RandomResizedCrop(size=image_size),
+            transforms.ToTensor(),
+            normalize
+        ]
+
+        transform = TwoCropsTransform(transforms.Compose(augmentation))
+
+    elif augment == 'aug_byol1':
+        augmentation = [
+            transforms.RandomApply([
+                transforms.ColorJitter(0.8, 0.8, 0.8, 0.2)   
+            ], p=0.8),
+            transforms.RandomGrayscale(p=0.2),
+            transforms.RandomApply([GaussianBlur([1.5, 1.5])], p=0.1),
+            transforms.RandomResizedCrop(size=img_size),
+            transforms.ToTensor(),
+            normalize
+        ]
+
     else:
         if dataset == 'cub':
             transform = transforms.Compose([transforms.Resize(image_size), 

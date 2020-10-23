@@ -118,28 +118,6 @@ def main(config):
             optimizer.step()
             model.module.update_moving_average()
             aves['tl'].add(loss.item())
-            aves['ta'].add(acc)
-
-        # eval in novel classes
-        model.eval()
-        for name, loader, name_l, name_a in [
-                ('val', val_loader, 'vl', 'va'), 
-                ('test', test_loader, 'tvl', 'tva')]:
-           
-            if ((config.get('val_dataset') is None) and name == 'val') \
-                    or ((config.get('test_dataset') is None) and name == 'test'):
-                continue
-
-            np.random.seed(0)
-            for data, _ in tqdm(loader, desc=name, leave=False):
-                x_shot, x_query = split_shot_query(data.cuda(), n_way, n_shot, n_query, ep_per_batch=config[name + '_dataset_args']['batch_size'])
-                label = make_nk_label(n_way, n_query,ep_per_batch=config[name + '_dataset_args']['batch_size']).cuda()
-                with torch.no_grad():
-                    logits = model(x_shot, x_query).view(-1, n_way)
-                    loss = F.cross_entropy(logits, label)
-                    acc = utils.compute_acc(logits, label)
-                aves[name_l].add(loss.item())
-                aves[name_a].add(acc)
 
         _sig = int(_[-1])
 
@@ -155,21 +133,10 @@ def main(config):
         t_used = utils.time_str(timer_used.t())
         t_estimate = utils.time_str(timer_used.t() / epoch * max_epoch)
        
-        utils.log('epoch {}, train {:.4f}|{:.4f}, val {:.4f}|{:.4f}, '
-                'tval {:.4f}|{:.4f}, {} {}/{} (@{})'.format(
-                epoch, aves['tl'], aves['ta'], aves['vl'], aves['va'],
-                aves['tvl'], aves['tva'], t_epoch, t_used, t_estimate, _sig))
+        utils.log('epoch {}, train| loss: {:.4f}, {} {}/{} (@{})'.format(epoch, aves['tl'], t_epoch, t_used, t_estimate, _sig))
 
-        writer.add_scalars('loss', {
-            'train': aves['tl'],
-            'tval': aves['tvl'],
-            'val': aves['vl'],
-        }, epoch)
-        writer.add_scalars('acc', {
-            'train': aves['ta'],
-            'tval': aves['tva'],
-            'val': aves['va'],
-        }, epoch)
+        writer.add_scalars('loss', {'train': aves['tl'],}, epoch)
+        # writer.add_scalars('acc', {'train': aves['ta'],}, epoch)
 
         if config.get('_parallel'):
             model_ = model.module

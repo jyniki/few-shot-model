@@ -101,7 +101,7 @@ def main(config):
         np.random.seed(epoch)
         for data, _ in tqdm(train_loader, desc='train', leave=False):
             x_shot, x_query = split_shot_query(data.cuda(), n_way, n_shot, n_query, ep_per_batch=config['train_dataset_args']['batch_size'])
-            label = make_nk_label(n_way, n_query, ep_per_batch=config['train_dataset_args']['batch_size']).cuda() #[75*4]
+            label = make_nk_label(n_way, n_query, ep_per_batch=config['train_dataset_args']['batch_size']).cuda()
             logits = model(x_shot, x_query).view(-1, n_way) #[75*4,5]
             loss = F.cross_entropy(logits, label)
             acc = utils.compute_acc(logits, label)
