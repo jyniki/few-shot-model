@@ -39,6 +39,26 @@ def main(config):
     if config.get('visualize_datasets'):
         utils.visualize_dataset(train_dataset, 'train_dataset', writer)
 
+  # val 
+    if config.get('val_dataset'):
+        val_dataset = get_fewshot_dataset(config['dataset_path'], config['val_dataset'], **config['val_dataset_args'])
+        val_loader = get_meta_loader(val_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query, batch_size=config['val_dataset_args']['batch_size'], num_workers=4)
+        utils.log('val dataset: {} (x{}), {}'.format(val_dataset[0][0].shape, len(val_dataset), val_dataset.n_classes))
+        if config.get('visualize_datasets'):
+            utils.visualize_dataset(val_dataset, 'val_dataset', writer)
+    else:
+        val_loader = None
+
+    # test
+    if config.get('test_dataset'):
+        test_dataset = get_fewshot_dataset(config['dataset_path'], config['test_dataset'], **config['test_dataset_args'])
+        test_loader = get_meta_loader(test_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query, batch_size=config['test_dataset_args']['batch_size'], num_workers=4)
+        utils.log('test dataset: {} (x{}), {}'.format(test_dataset[0][0].shape, len(test_dataset), test_dataset.n_classes))
+        if config.get('visualize_datasets'):
+            utils.visualize_dataset(test_dataset, 'test_dataset', writer)
+    else:
+        test_loader = None
+
     #### Model and optimizer ####
     if config.get('load'):
         model_sv = torch.load(config['load'])

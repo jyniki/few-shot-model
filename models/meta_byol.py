@@ -66,8 +66,10 @@ class MetaByol(nn.Module):
         self.online_encoder = models.make(encoder, **encoder_args)
         self.online_projector = MLP(self.online_encoder.out_dim, 256, 4096).cuda()
         self.online_encoder_all = nn.Sequential(self.online_encoder, self.online_projector)
+
         self.target_encoder_all = None
         self.target_ema_updater = EMA(0.99)
+        
         self.online_predictor = MLP(256, 256, 4096).cuda()
 
         # send a mock image tensor to instantiate singleton parameters
