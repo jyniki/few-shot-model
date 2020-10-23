@@ -59,20 +59,24 @@ class MetaByol(nn.Module):
                  temp=10., temp_learnable=True):
         super().__init__()
         self.method = method
+        moving_average_decay = 0.99
+        projection_size = 256
+        projection_hidden_size = 4096
         if temp_learnable:
             self.temp = nn.Parameter(torch.tensor(temp))
         else:
             self.temp = temp
         self.online_encoder = models.make(encoder, **encoder_args)
-        self.online_projector = MLP(self.online_encoder.out_dim, 256, 4096).cuda()
+        self.online_projector = MLP(self.online_encoder.out_dim, projection_size, projection_hidden_size).cuda()
         self.online_encoder_all = nn.Sequential(self.online_encoder, self.online_projector)
 
         self.target_encoder_all = None
-        self.target_ema_updater = EMA(0.99)
+        self.target_ema_updater = EMA(moving_average_decay)
         
-        self.online_predictor = MLP(256, 256, 4096).cuda()
+        self.online_predictor = MLP(projection_size, projection_size, projection_hidden_size).cuda()
 
         # send a mock image tensor to instantiate singleton parameters
+        # x_shot_one, x_query_one, x_shot_two, x_query_two
         self.forward(torch.randn(1, 5, 1, 3, 84, 84).cuda(), torch.randn(1, 75, 3, 84, 84).cuda(),
                      torch.randn(1, 5, 1, 3, 84, 84).cuda(), torch.randn(1, 75, 3, 84, 84).cuda())
 
@@ -95,26 +99,27 @@ class MetaByol(nn.Module):
         shot_shape = x_shot_one.shape[:-3]
         query_shape = x_query_one.shape[:-3]
         img_shape = x_shot_one.shape[-3:]
-        x_shot_one = x_shot_one.view(-1, *img_shape)
-        x_query_one = x_query_one.view(-1, *img_shape)
+
+        x_shot_one = x_shot_one.view(-1, *img_shape)   # [5,3,84,84]
+        x_query_one = x_query_one.view(-1, *img_shape) # [75,3,84,84]
         x_shot_two = x_shot_one.view(-1, *img_shape)
         x_query_two = x_query_two.view(-1, *img_shape)
        
-        image_one = torch.cat([x_shot_one, x_query_one], dim=0)
+        image_one = torch.cat([x_shot_one, x_query_one], dim=0) # [80,3,84,84]
         image_two = torch.cat([x_shot_two, x_query_two], dim=0)
         
-        online_feat_one = self.online_encoder(image_one)
+        online_feat_one = self.online_encoder(image_one)   # [80,512]
         online_feat_two = self.online_encoder(image_two)
         
-        online_proj_one = self.online_projector(online_feat_one)
+        online_proj_one = self.online_projector(online_feat_one) # [80,256]
         online_proj_two = self.online_projector(online_feat_two)
         
-        online_pred_one = self.online_predictor(online_proj_one)
+        online_pred_one = self.online_predictor(online_proj_one) # [80,256]
         online_pred_two = self.online_predictor(online_proj_two)
 
         with torch.no_grad():
             target_encoder_all = self._get_target_encoder()
-            target_proj_one = target_encoder_all(image_one)
+            target_proj_one = target_encoder_all(image_one)  # [80,256]
             target_proj_two = target_encoder_all(image_two)
 
         loss_one = loss_fn(online_pred_one, target_proj_two.detach())
