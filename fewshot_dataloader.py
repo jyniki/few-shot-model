@@ -3,11 +3,15 @@ import io
 import h5py
 import json
 import numpy as np
+import random
 from PIL import Image, ImageFilter
+
 import torch
+from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-import random
+from kornia import augmentation as augs
+from kornia import filters, color
 
 # base-classes for baseline classifier training
 class Fewshot_dataset(Dataset):

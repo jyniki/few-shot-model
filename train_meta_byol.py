@@ -109,7 +109,7 @@ def main(config):
             x_shot_one, x_query_one = split_shot_query(data[0], n_way, n_shot, n_query, ep_per_batch=config['train_dataset_args']['batch_size'])
             x_shot_two, x_query_two = split_shot_query(data[1], n_way, n_shot, n_query, ep_per_batch=config['train_dataset_args']['batch_size'])
             label = make_nk_label(n_way, 2 * n_query, ep_per_batch=config['train_dataset_args']['batch_size']).cuda()
-            loss_byol, logits = model(x_shot_one, x_query_one, x_shot_two, x_query_two)
+            loss_byol, logits = model(x_shot_one, x_query_one, x_shot_two, x_query_two)  # contrasive learning
 
             loss_meta = F.cross_entropy(logits.view(-1, n_way), label)
             loss = loss_byol.mean() + loss_meta
