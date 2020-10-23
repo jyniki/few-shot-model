@@ -1,4 +1,6 @@
-/save/
+**/tensorboard
+**/*.pth
+**/*.yaml
 /few_data/
 **/__pycache__
 .DS_Store
