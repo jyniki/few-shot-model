@@ -76,7 +76,7 @@ class MetaByol(nn.Module):
         self.online_predictor = MLP(projection_size, projection_size, projection_hidden_size).cuda()
 
         # send a mock image tensor to instantiate singleton parameters
-        # x_shot_one, x_query_one, x_shot_two, x_query_two
+        # x_shot_one, x_query_one, x_shot_two, x_query_two  (transformed)
         self.forward(torch.randn(1, 5, 1, 3, 84, 84).cuda(), torch.randn(1, 75, 3, 84, 84).cuda(),
                      torch.randn(1, 5, 1, 3, 84, 84).cuda(), torch.randn(1, 75, 3, 84, 84).cuda())
 
@@ -100,14 +100,9 @@ class MetaByol(nn.Module):
         query_shape = x_query_one.shape[:-3]
         img_shape = x_shot_one.shape[-3:]
 
-        x_shot_one = x_shot_one.view(-1, *img_shape)   # [5,3,84,84]
-        x_query_one = x_query_one.view(-1, *img_shape) # [75,3,84,84]
-        x_shot_two = x_shot_one.view(-1, *img_shape)
-        x_query_two = x_query_two.view(-1, *img_shape)
-
         # contrastive learning in query + support
-        image_one = torch.cat([x_shot_one, x_query_one], dim=0) # [80,3,84,84]
-        image_two = torch.cat([x_shot_two, x_query_two], dim=0)
+        image_one = x_shot_one.view(-1, *img_shape)   # [5,3,84,84]
+        image_two = x_shot_two.view(-1, *img_shape)
         
         online_feat_one = self.online_encoder(image_one)   # [80,512]
         online_feat_two = self.online_encoder(image_two)

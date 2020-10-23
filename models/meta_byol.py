@@ -102,7 +102,7 @@ class MetaByol(nn.Module):
 
         x_shot_one = x_shot_one.view(-1, *img_shape)   # [5,3,84,84]
         x_query_one = x_query_one.view(-1, *img_shape) # [75,3,84,84]
-        x_shot_two = x_shot_one.view(-1, *img_shape)
+        x_shot_two = x_shot_two.view(-1, *img_shape)
         x_query_two = x_query_two.view(-1, *img_shape)
 
         # contrastive learning in query + support
