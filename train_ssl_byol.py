@@ -38,26 +38,6 @@ def main(config):
     if config.get('visualize_datasets'):
         utils.visualize_dataset(train_dataset, 'train_dataset', writer)
 
-    # val 
-    if config.get('val_dataset'):
-        val_dataset = get_fewshot_dataset(config['dataset_path'], config['val_dataset'], **config['val_dataset_args'])
-        val_loader = get_meta_loader(val_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query, batch_size=config['val_dataset_args']['batch_size'], num_workers=8)
-        utils.log('val dataset: {} (x{}), {}'.format(val_dataset[0][0].shape, len(val_dataset), val_dataset.n_classes))
-        if config.get('visualize_datasets'):
-            utils.visualize_dataset(val_dataset, 'val_dataset', writer)
-    else:
-        val_loader = None
-
-    # test
-    if config.get('test_dataset'):
-        test_dataset = get_fewshot_dataset(config['dataset_path'], config['test_dataset'], **config['test_dataset_args'])
-        test_loader = get_meta_loader(test_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query, batch_size=config['test_dataset_args']['batch_size'], num_workers=8)
-        utils.log('test dataset: {} (x{}), {}'.format(test_dataset[0][0].shape, len(test_dataset), test_dataset.n_classes))
-        if config.get('visualize_datasets'):
-            utils.visualize_dataset(test_dataset, 'test_dataset', writer)
-    else:
-        test_loader = None
-
     #### Model and optimizer ####
     if config.get('load'):
         model_sv = torch.load(config['load'])
@@ -82,7 +62,7 @@ def main(config):
     timer_used = utils.Timer()
     timer_epoch = utils.Timer()
 
-    aves_keys = ['tl', 'ta', 'vl', 'va', 'tvl', 'tva']
+    aves_keys = ['tl', 'ta']
     trlog = dict()
     for k in aves_keys:
         trlog[k] = []
@@ -100,39 +80,17 @@ def main(config):
         # meta-learing in base classes
         np.random.seed(epoch)
         for data, _ in tqdm(train_loader, desc='train', leave=False):
-            x_shot, x_query = split_shot_query(data.cuda(), n_way, n_shot, n_query, ep_per_batch=config['train_dataset_args']['batch_size'])
-            label = make_nk_label(n_way, n_query, ep_per_batch=config['train_dataset_args']['batch_size']).cuda()
-            logits = model(x_shot, x_query).view(-1, n_way) #[75*4,5]
-            loss = F.cross_entropy(logits, label)
-            acc = utils.compute_acc(logits, label)
+            data[0] = data[0].cuda()
+            data[1] = data[1].cuda()
+            x_shot_one, x_query_one = split_shot_query(data[0], n_way, n_shot, n_query, ep_per_batch=config['train_dataset_args']['batch_size'])
+            x_shot_two, x_query_two = split_shot_query(data[1], n_way, n_shot, n_query, ep_per_batch=config['train_dataset_args']['batch_size'])
+            loss_byol = model(x_shot_one, x_query_one, x_shot_two, x_query_two)  # contrasive learning
+            loss = loss_byol.mean() 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            model.module.update_moving_average()
             aves['tl'].add(loss.item())
-            aves['ta'].add(acc)
-            logits = None
-            loss = None 
-
-        # eval in novel classes
-        model.eval()
-        for name, loader, name_l, name_a in [
-                ('val', val_loader, 'vl', 'va'), 
-                ('test', test_loader, 'tvl', 'tva')]:
-           
-            if ((config.get('val_dataset') is None) and name == 'val') \
-                    or ((config.get('test_dataset') is None) and name == 'test'):
-                continue
-
-            np.random.seed(0)
-            for data, _ in tqdm(loader, desc=name, leave=False):
-                x_shot, x_query = split_shot_query(data.cuda(), n_way, n_shot, n_query, ep_per_batch=config[name + '_dataset_args']['batch_size'])
-                label = make_nk_label(n_way, n_query,ep_per_batch=config[name + '_dataset_args']['batch_size']).cuda()
-                with torch.no_grad():
-                    logits = model(x_shot, x_query).view(-1, n_way)
-                    loss = F.cross_entropy(logits, label)
-                    acc = utils.compute_acc(logits, label)
-                aves[name_l].add(loss.item())
-                aves[name_a].add(acc)
 
         _sig = int(_[-1])
 
@@ -147,20 +105,10 @@ def main(config):
         t_epoch = utils.time_str(timer_epoch.t())
         t_used = utils.time_str(timer_used.t())
         t_estimate = utils.time_str(timer_used.t() / epoch * max_epoch)
-        utils.log('epoch {}, train {:.4f}|{:.4f}, val {:.4f}|{:.4f}, '
-                'test {:.4f}|{:.4f}, {} {}/{} (@{})'.format(
-                epoch, aves['tl'], aves['ta'], aves['vl'], aves['va'],
-                aves['tvl'], aves['tva'], t_epoch, t_used, t_estimate, _sig))
+        utils.log('epoch {}, train | loss:{:.4f}, {} {}/{} (@{})'.format(
+                epoch, aves['tl'], t_epoch, t_used, t_estimate, _sig))
 
-        writer.add_scalars('loss', {
-            'train': aves['tl'],
-            'val': aves['vl'],
-            'test': aves['tvl'],}, epoch)
-
-        writer.add_scalars('acc', {
-            'train': aves['ta'],
-            'val': aves['va'],
-            'test': aves['tva'],}, epoch)
+        writer.add_scalars('loss', {'train': aves['tl']}, epoch)
 
         if config.get('_parallel'):
             model_ = model.module
@@ -196,7 +144,7 @@ def main(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config',default='configs/train_ssl_meta_mini.yaml')
+    parser.add_argument('--config',default='configs/train_byol_mini.yaml')
     parser.add_argument('--name', default=None)
     parser.add_argument('--tag', default=None)
     parser.add_argument('--gpu', default='2,3')

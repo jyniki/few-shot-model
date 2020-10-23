@@ -53,10 +53,9 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-@register('meta-byol')
+@register('meta-byol-ssl')
 class MetaByol(nn.Module):
-    def __init__(self, encoder, encoder_args={}, method='cos',
-                 temp=10., temp_learnable=True):
+    def __init__(self, encoder, encoder_args={}):
         super().__init__()
         self.method = method
         moving_average_decay = 0.99
@@ -127,57 +126,9 @@ class MetaByol(nn.Module):
         loss_two = loss_fn(online_pred_two, target_proj_one.detach())
         
         loss_byol = loss_one + loss_two
-
-        # classification based on two transform images
-        x_shot_one, x_query_one = online_feat_one[:len(x_shot_one)], online_feat_one[-len(x_query_one):]
-        x_shot_one = x_shot_one.view(*shot_shape, -1)
-        x_query_one = x_query_one.view(*query_shape, -1)
-
-        x_shot_two, x_query_two = online_feat_two[:len(x_shot_two)], online_feat_two[-len(x_query_two):]
-        x_shot_two = x_shot_two.view(*shot_shape, -1)
-        x_query_two = x_query_two.view(*query_shape, -1)
-
-        x_shot = torch.cat([x_shot_one, x_shot_two], dim=2)
-        x_query = torch.cat([x_query_one, x_query_two], dim=1)
-
-        if self.method == 'cos':
-            x_shot = x_shot.mean(dim=-2)
-            x_shot = F.normalize(x_shot, dim=-1)
-            x_query = F.normalize(x_query, dim=-1)
-            metric = 'dot'
-        elif self.method == 'sqr':
-            x_shot = x_shot.mean(dim=-2)
-            metric = 'sqr'
-
-        logits = utils.compute_logits(x_query, x_shot, metric=metric, temp=self.temp)
-
-        return loss_byol, logits
-        
-    def test(self, x_shot, x_query):
-        shot_shape = x_shot.shape[:-3]
-        query_shape = x_query.shape[:-3]
-        img_shape = x_shot.shape[-3:]
-
-        x_shot = x_shot.view(-1, *img_shape)
-        x_query = x_query.view(-1, *img_shape)
-        x_tot = self.online_encoder(torch.cat([x_shot, x_query], dim=0))
-        x_shot, x_query = x_tot[:len(x_shot)], x_tot[-len(x_query):]
-        x_shot = x_shot.view(*shot_shape, -1)
-        x_query = x_query.view(*query_shape, -1)
-
-        if self.method == 'cos':
-            x_shot = x_shot.mean(dim=-2)
-            x_shot = F.normalize(x_shot, dim=-1)
-            x_query = F.normalize(x_query, dim=-1)
-            metric = 'dot'
-        elif self.method == 'sqr':
-            x_shot = x_shot.mean(dim=-2)
-            metric = 'sqr'
-
-        logits = utils.compute_logits(
-            x_query, x_shot, metric=metric, temp=self.temp)
-        return logits
-
+       
+        return loss_byol
+  
 def loss_fn(x, y):
     x = F.normalize(x, dim=-1, p=2)
     y = F.normalize(y, dim=-1, p=2)
