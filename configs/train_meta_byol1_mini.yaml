@@ -6,7 +6,7 @@ val_dataset_args: {split: val, batch_size: 4}
 test_dataset: miniimagenet
 test_dataset_args: {split: test, batch_size: 4}
 
-model: meta-byol
+model: meta-byol1
 model_args: 
     encoder: resnet12
     encoder_args: {}

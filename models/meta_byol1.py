@@ -100,23 +100,32 @@ class MetaByol(nn.Module):
         query_shape = x_query_one.shape[:-3]
         img_shape = x_shot_one.shape[-3:]
 
-        # contrastive learning in query + support
-        image_one = x_shot_one.view(-1, *img_shape)   # [5,3,84,84]
-        image_two = x_shot_two.view(-1, *img_shape)
+        # contrastive learning in support
+        x_shot_one = x_shot_one.view(-1, *img_shape)  # [5,3,84,84]
+        x_query_one = x_query_one.view(-1, *img_shape)  # [75,3,84,84]
+        x_shot_two = x_shot_two.view(-1, *img_shape)
+        x_query_two = x_query_two.view(-1, *img_shape)
+
+
+        image_one = torch.cat([x_shot_one, x_query_one], dim=0) # [80,3,84,84]
+        image_two = torch.cat([x_shot_two, x_query_two], dim=0)
         
-        online_feat_one = self.online_encoder(image_one)   # [80,512]
-        online_feat_two = self.online_encoder(image_two)
-        
-        online_proj_one = self.online_projector(online_feat_one) # [80,256]
+        online_feat_one = self.online_encoder(x_shot_one)   # [5,512]
+        online_feat_two = self.online_encoder(x_shot_two)
+
+        online_feat_one_all = self.online_encoder(image_one)  # [80,512]
+        online_feat_two_all = self.online_encoder(image_two)
+
+        online_proj_one = self.online_projector(online_feat_one) # [5,256]
         online_proj_two = self.online_projector(online_feat_two)
         
-        online_pred_one = self.online_predictor(online_proj_one) # [80,256]
+        online_pred_one = self.online_predictor(online_proj_one) # [5,256]
         online_pred_two = self.online_predictor(online_proj_two)
 
         with torch.no_grad():
             target_encoder_all = self._get_target_encoder()
-            target_proj_one = target_encoder_all(image_one)  # [80,256]
-            target_proj_two = target_encoder_all(image_two)
+            target_proj_one = target_encoder_all(x_shot_one)  # [5,256]
+            target_proj_two = target_encoder_all(x_shot_two)
 
         loss_one = loss_fn(online_pred_one, target_proj_two.detach())
         loss_two = loss_fn(online_pred_two, target_proj_one.detach())
@@ -124,11 +133,11 @@ class MetaByol(nn.Module):
         loss_byol = loss_one + loss_two
 
         # classification based on two transform images
-        x_shot_one, x_query_one = online_feat_one[:len(x_shot_one)], online_feat_one[-len(x_query_one):]
+        x_shot_one, x_query_one = online_feat_one_all[:len(x_shot_one)], online_feat_one_all[-len(x_query_one):]
         x_shot_one = x_shot_one.view(*shot_shape, -1)
         x_query_one = x_query_one.view(*query_shape, -1)
 
-        x_shot_two, x_query_two = online_feat_two[:len(x_shot_two)], online_feat_two[-len(x_query_two):]
+        x_shot_two, x_query_two = online_feat_two_all[:len(x_shot_two)], online_feat_two_all[-len(x_query_two):]
         x_shot_two = x_shot_two.view(*shot_shape, -1)
         x_query_two = x_query_two.view(*query_shape, -1)
 
