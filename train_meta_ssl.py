@@ -17,7 +17,7 @@ def main(config):
     svname = args.name
     if svname is None:
         svname = 'meta_{}-{}shot'.format(config['train_dataset'], config['n_shot'])
-        svname += '_' + config['model'] + '-' + config['model_args']['encoder']
+        svname += '_' + config['model'] + '-' + config['ssl_type'] + config['model_args']['encoder']
     if args.tag is not None:
         svname += '_' + args.tag
     save_path = os.path.join('./save', svname)
@@ -196,7 +196,7 @@ def main(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config',default='configs/train_meta_mini.yaml')
+    parser.add_argument('--config',default='configs/train_ssl_meta_mini.yaml')
     parser.add_argument('--name', default=None)
     parser.add_argument('--tag', default=None)
     parser.add_argument('--gpu', default='0,1,2,3')

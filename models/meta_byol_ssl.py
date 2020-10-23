@@ -57,14 +57,10 @@ class MLP(nn.Module):
 class MetaByol(nn.Module):
     def __init__(self, encoder, encoder_args={}):
         super().__init__()
-        self.method = method
         moving_average_decay = 0.99
         projection_size = 256
         projection_hidden_size = 4096
-        if temp_learnable:
-            self.temp = nn.Parameter(torch.tensor(temp))
-        else:
-            self.temp = temp
+       
         self.online_encoder = models.make(encoder, **encoder_args)
         self.online_projector = MLP(self.online_encoder.out_dim, projection_size, projection_hidden_size).cuda()
         self.online_encoder_all = nn.Sequential(self.online_encoder, self.online_projector)

@@ -34,7 +34,6 @@ def main(config):
     # train 
     train_dataset = get_fewshot_dataset(config['dataset_path'],config['train_dataset'], **config['train_dataset_args'])
     train_loader= get_meta_loader(train_dataset, n_batch=200, ways=n_way, shots=n_shot, query_shots=n_query, batch_size=config['train_dataset_args']['batch_size'], num_workers=8)
-    utils.log('train dataset: {} (x{}), {}'.format(train_dataset[0][0].shape, len(train_dataset), train_dataset.n_classes))
     if config.get('visualize_datasets'):
         utils.visualize_dataset(train_dataset, 'train_dataset', writer)
 
@@ -45,8 +44,8 @@ def main(config):
     else:
         model = models.make(config['model'], **config['model_args'])
         if config.get('load_encoder'):
-            encoder = models.load(torch.load(config['load_encoder'])).online_encoder
-            model.encoder.load_state_dict(encoder.state_dict())  # the encoder of meta-baseline is tranferred from the trained classifier-baseline 
+            encoder = models.load(torch.load(config['load_encoder'])).encoder
+            model.online_encoder.load_state_dict(encoder.state_dict())  # the encoder of meta-baseline is tranferred from the trained classifier-baseline 
 
     if config.get('_parallel'):
         model = nn.DataParallel(model)
@@ -58,7 +57,7 @@ def main(config):
     #### train, val and test ####
     max_epoch = config['max_epoch']
     save_epoch = config.get('save_epoch')
-    max_va = 0.
+    min_loss = 100.
     timer_used = utils.Timer()
     timer_epoch = utils.Timer()
 
@@ -132,12 +131,12 @@ def main(config):
         torch.save(save_obj, os.path.join(save_path, 'epoch-last.pth'))
         torch.save(trlog, os.path.join(save_path, 'trlog.pth'))
 
-        if (save_epoch is not None) and epoch % save_epoch == 0:
-            torch.save(save_obj, os.path.join(save_path, 'epoch-{}.pth'.format(epoch)))
+        # if (save_epoch is not None) and epoch % save_epoch == 0:
+        #     torch.save(save_obj, os.path.join(save_path, 'epoch-{}.pth'.format(epoch)))
 
-        if aves['va'] > max_va:
-            max_va = aves['va']
-            torch.save(save_obj, os.path.join(save_path, 'max-va.pth'))
+        # if aves['tl'] < min_loss:
+        #     min_loss = aves['tl']
+        #     torch.save(save_obj, os.path.join(save_path, 'max-va.pth'))
 
         writer.flush()
 
@@ -147,7 +146,7 @@ if __name__ == '__main__':
     parser.add_argument('--config',default='configs/train_byol_mini.yaml')
     parser.add_argument('--name', default=None)
     parser.add_argument('--tag', default=None)
-    parser.add_argument('--gpu', default='2,3')
+    parser.add_argument('--gpu', default='0,1,2,3')
     args = parser.parse_args()
 
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
