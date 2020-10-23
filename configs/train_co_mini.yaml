@@ -2,7 +2,6 @@ dataset_path: few_data/
 train_dataset: miniimagenet
 train_dataset_args: {split: train, augment: aug_co, batch_size: 4}  
 
-
 model: meta-co-ssl
 model_args: 
     encoder: resnet12
