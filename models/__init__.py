@@ -11,7 +11,7 @@ from . import backbone
 from . import classifier
 
 from . import meta_baseline
-from . import meta_byol, meta_byol5
+from . import meta_byol, meta_byol1, meta_byol2
 from . import meta_co, meta_byol_ssl
 from . import meta_atten
 

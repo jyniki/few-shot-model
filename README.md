@@ -24,7 +24,12 @@ train_meta.py        #  Meta-Baseline
 
 train_ssl_co.py      # add MoCo between Classifier and Meta Baseline
 train_ssl_byol.py    # add BYOL between Classifier and Meta Baseline
-train_meta_ssl       # Meta-Learning before SSL
+train_ssl_meta.py       # Meta-Learning before SSL
 
 train_meta_co.py      # joint MoCo in Meta Baseline
 train_meta_byol.py    # joint BYOL in Meta Baseline
+
+#### Different settings of byol   
+byol
+byol1
+byol2
