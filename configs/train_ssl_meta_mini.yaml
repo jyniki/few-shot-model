@@ -13,7 +13,7 @@ model_args:
     encoder: resnet12 # resnet18
     encoder_args: {}
 
-load_encoder: ./save/meta_miniimagenet-1shot_meta-byol-ssl-resnet12/epoch-last.pth
+# load_encoder: ./save/meta_miniimagenet-1shot_meta-byol-ssl-resnet12/epoch-last.pth
 
 n_way: 5
 n_shot: 1 #5
