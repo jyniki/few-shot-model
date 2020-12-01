@@ -31,19 +31,23 @@ train_meta_byol.py    # joint BYOL in Meta Baseline
 
 #### Different settings of byol    (models)
 > meta_byol_ssl  
-# the model is used in `train_ssl_byol.py`
+>
+> - the model is used in `train_ssl_byol.py`
 
 > meta_byol      
-# the model is used in `train_meta_byol.py`
-# ssl in support+query sets
-# classification based on transformed support and query sets
+>
+> - the model is used in `train_meta_byol.py`
+> - ssl in support+query sets
+> - classification based on transformed support and query sets
 
 > eta_byol1     
-# the model is used in `train_meta_byol.py`, 
-# ssl in support set
-# classification based on transformed support set as prototype and original query set
+>
+> - the model is used in `train_meta_byol.py`, 
+> - ssl in support set
+> - classification based on transformed support set as prototype and original query set
 
 > meta_byol2     
-# the model is used in `train_meta_byol.py`, 
-# ssl in support+query sets
-# classification based on original support and query sets
+>
+> - the model is used in `train_meta_byol.py`, 
+> - ssl in support+query sets
+> - classification based on original support and query sets
